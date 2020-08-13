@@ -201,7 +201,34 @@
       //manipulations here
       return true;
     }
-
+    public static function arrayVariable($value, $msg){
+      if(is_array($value)){
+        return true;
+      }else{
+        die($msg);
+      }
+    }
+    public static function stringVariable($value, $msg){
+      if(is_string($value)){
+        return true;
+      }else{
+        die($msg);
+      }
+    }
+    public static function booleanVariable($value, $msg){
+      if(is_bool($value)){
+        return true;
+      }else{
+        die($msg);
+      }
+    }
+    public static function functionVariable($value, $msg){
+      if(is_callable($value)){
+        return true;
+      }else{
+        die($msg);
+      }
+    }
   }
 
 
