@@ -8,8 +8,71 @@
   /**
    *
    */
-  class validate
+  class validator
   {
+    private $supportedRules = [
+      "required"  => 1, 
+      "minLength" => 1, 
+      "maxLength" => 1, 
+      "alpha"     => 1, 
+      "integer"   => 1, 
+      "alphaNum"  => 1, 
+      "float"     => 1, 
+      "ext"       => 1,
+      "minSize"   => 1,
+      "maxSize"   => 1,
+      "callBack"  => 1, 
+      "email"     => 1, 
+      "file"      => 1,
+      "notIn"     => 1, 
+      "trim"      => 1,
+      "noSpace"   => 1,
+      "fullName"  => 1
+    ];
+    private $errorLog = [];
+    private function getVal($rulesInUse, $key){
+      return $rulesInUse[$key] == 1 ? "" : ":".$rulesInUse[$key];
+    }
+    private function getMessageDetails($msg){
+      $ids = [
+          "e" => "error",
+          "w" => "warning",
+          "s" => "success"
+      ];
+
+      $msplit = explode(":", $msg);
+      if (count($msplit) == 2) {
+          $key = strtolower($msplit[0]);
+          if (array_key_exists($key, $ids)) { //Not Found
+              return ["error", $msplit[1]];
+          } else { //found
+              return [$ids[$key], $msplit[1]];
+          }
+      } else {
+          return ["error", $msplit[0]];
+      }
+    }
+    public function requestDataOK(){}
+    private function checkRule($rule, &$rulesInUse, $sub, $rules){
+      try {
+        if ($sub == null) { //String and no sub
+            if (array_key_exists($rule[0], $this->supportedRules)) {
+                $rule[0] == "callBack"? $rulesInUse[$rule[0]] = $rules[$rule[0]] : $rulesInUse[$rule[0]] = 1;
+            } else {
+                throw new Exception("This rule " . style::color($rule[0] , "black") . " is not supported");
+            }
+        } else if ($sub != null) { //string and has sub
+            $fullKey = implode(":", $rule);
+            if (array_key_exists($rule[0], $this->supportedRules)) {
+                $rulesInUse[$rule[0]] = $rule[1];
+            } else {
+                throw new Exception("This rule " . style::color($fullKey , "black") . " is not supported");
+            }
+        }
+      } catch (\Exception $e) {
+        trigger_error(message::write("error", get::staticMethod(__CLASS__, __FUNCTION__). $e->getMessage()));
+      }
+    }
     public static function input($data, $rule){
       $supportedRules1 = ["required", "integer", "file", "string", "date", "email", "float"];
       $supportedRules2 = ["min-length:", "max-length:", "max-size:", "min-size:",  "ext:", "max-value:", "min-value:"];
@@ -91,7 +154,6 @@
                     }
                     $selectedRules[] = $id;
                     $ruleData[$id] = $value;
-                    // }
                   }
                 }
               }
@@ -117,7 +179,7 @@
           }
         }
       }catch (Exception $e){
-        die(message::write("error", get::staticMethod(__CLASS__, __FUNCTION__). $e->getMessage()));
+        trigger_error(message::write("error", get::staticMethod(__CLASS__, __FUNCTION__). $e->getMessage()));
       };
 
       function check_reuired($value, $bank){
@@ -201,32 +263,73 @@
       //manipulations here
       return true;
     }
-    public static function arrayVariable($value, $msg){
+    public function validateRequestData($name, $rules){
+      $rulesInUse = [];
+      $parseRules = array_keys($rules);
+      $totalRules = count($parseRules);
+
+      //build available contraints
+      for ($x = 0; $x < $totalRules; $x++) {
+          //check for sub value
+          $check  = explode(":", $parseRules[$x]);
+          $sub    = count($check) == 2 ? "sub" : null;
+          $this->checkRule($check, $rulesInUse, $sub, $rules);
+      }
+      
+      if(array_key_exists("required", $rulesInUse)){
+        $keyVal = $this->getVal($rulesInUse, "required");
+        if (strlen("") == 0) {
+            $matchMessage = $this->getMessageDetails($rules["required".$keyVal]);
+            $messageType = $matchMessage[0];
+            $messageBody = $matchMessage[1];
+            print_r($matchMessage);
+            // self.message.write(inputField, messageType, location, messageBody, customStyles);
+            return;
+        } else {
+            // clearLastError(rules, keyVal, inputField, inputWrapper)
+        }
+      }
+    }
+    public static function validateArray($value, $msg){
       if(is_array($value)){
         return true;
       }else{
-        die($msg);
+        trigger_error($msg);
       }
     }
-    public static function stringVariable($value, $msg){
+    public static function validateString($value, $msg){
       if(is_string($value)){
         return true;
       }else{
-        die($msg);
+        trigger_error($msg);
       }
     }
-    public static function booleanVariable($value, $msg){
+    public static function validateBoolean($value, $msg){
       if(is_bool($value)){
         return true;
       }else{
-        die($msg);
+        trigger_error($msg);
       }
     }
-    public static function functionVariable($value, $msg){
+    public static function validateFunction($value, $msg){
       if(is_callable($value)){
         return true;
       }else{
-        die($msg);
+        trigger_error($msg);
+      }
+    }
+    public static function validateInteger($value, $msg){
+      if(is_long($value)){
+        return true;
+      }else{
+        trigger_error($msg);
+      }
+    }
+    public static function validateFile($value, $msg){
+      if(file_exists($value)){
+        return true;
+      }else{
+        trigger_error($msg);
       }
     }
   }
