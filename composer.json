@@ -1,6 +1,6 @@
 {
     "name": "vilshub/validator",
-    "description": "Library for data validation",
+    "description": "Library for data validation used in zion light framework",
     "type": "library",
     "require": {
       "php":">=5.3.0",
