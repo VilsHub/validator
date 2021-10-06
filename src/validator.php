@@ -2,6 +2,7 @@
   namespace vilshub\validator;
   use vilshub\helpers\Message;
   use \Exception;
+  use \FileInfo;
   use vilshub\helpers\Get;
   use vilshub\helpers\Style;
   use vilshub\helpers\TextProcessor;
@@ -35,7 +36,8 @@
       "integer"   => 1, 
       "alphaNum"  => 1, 
       "float"     => 1, 
-      "ext"       => 1,
+      "ext"       => 1,// done. file name extention
+      "mimeExt"   => 1,//done encode file extension
       "minSize"   => 1,
       "maxSize"   => 1,
       "callBack"  => 1, 
@@ -117,6 +119,14 @@
         $this->errorLog["csrf"] = $csrfToken;
       }
     }
+    private function mimeExtensionMatch($data, $extension){
+      $fileInfo = new FileInfo($data["tmp_name"]);
+      return in_array($extension, $fileInfo->extension());
+    }
+    private function fileExtensionMatch($data, $extension){
+      $fileInfo = pathinfo($data["name"]);
+      return strtolower($extension) == strtolower($fileInfo["extension"]);
+    }
     public function error($name, $message, $errorLocation=null, $csrfToken=null){
       $this->logError($name, $message, $errorLocation, $csrfToken);
       return json_encode($this->errorLog);
@@ -126,6 +136,12 @@
       return json_encode($this->errorLog);
     }
     public function validateInput($name, $rules, $data, $errorLocation=null){
+      /** @param string $name The name of the input element
+       *  @param array $rules An associative array defining the validation rules
+       *  @param mixType $data The data to be validated
+       *  @param string $errorLocation Optional, the location to display the error being sent back (vUX compatible only) value are : left, right and bottom
+       * 
+       */
       $rulesInUse = [];
       $parseRules = array_keys($rules);
       $totalRules = count($parseRules);
@@ -140,7 +156,8 @@
       
       if(array_key_exists("required", $rulesInUse)){
         $keyVal = $this->getVal($rulesInUse, "required");
-        if(strlen($data) == 0) {
+        $length = is_array($data)? $data["name"]:$data;
+        if(strlen($length) == 0) {
             $matchMessage = $this->getMessageDetails($rules["required".$keyVal]);
             $messageType = $matchMessage[0];
             $messageBody = $matchMessage[1];
@@ -189,6 +206,36 @@
             $messageBody = $matchMessage[1];
             $this->logError($name, $messageBody, $errorLocation);
             return;
+        }
+      }
+      if(array_key_exists("file", $rulesInUse)){
+        $keyVal = $this->getVal($rulesInUse, "file");
+        if (!is_file($data["tmp_name"])){
+            $matchMessage = $this->getMessageDetails($rules["file".$keyVal]);
+            $messageType = $matchMessage[0];
+            $messageBody = $matchMessage[1];
+            $this->logError($name, $messageBody, $errorLocation);
+            return;
+        }
+      }
+      if(array_key_exists("mimeExt", $rulesInUse)){
+        $keyVal = $this->getVal($rulesInUse, "mimeExt");
+        if (!$this->mimeExtensionMatch($data, ltrim($keyVal, ":"))){
+            $matchMessage = $this->getMessageDetails($rules["mimeExt".$keyVal]);
+            $messageType = $matchMessage[0];
+            $messageBody = $matchMessage[1];
+            $this->logError($name, $messageBody, $errorLocation);
+            return ;
+        }
+      }
+      if(array_key_exists("ext", $rulesInUse)){
+        $keyVal = $this->getVal($rulesInUse, "ext");
+        if (!$this->fileExtensionMatch($data, ltrim($keyVal, ":"))){
+            $matchMessage = $this->getMessageDetails($rules["ext".$keyVal]);
+            $messageType = $matchMessage[0];
+            $messageBody = $matchMessage[1];
+            $this->logError($name, $messageBody, $errorLocation);
+            return ;
         }
       }
     }
