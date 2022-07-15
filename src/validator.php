@@ -24,7 +24,7 @@
           return json_encode($this->errorLog);
           break;
         default:
-          trigger_error(Message::write("error", " unknown property ".Style::color(__CLASS__."->", "black").Style::color($propertyName, "red")), E_USER_NOTICE) ;
+          trigger_error(" unknown property ".Style::color(__CLASS__."->", "black").Style::color($propertyName, "red"), E_USER_NOTICE) ;
           break;
       }
     }
@@ -91,7 +91,7 @@
             }
         }
       } catch (\Exception $e) {
-        trigger_error(Message::write("error", Get::staticMethod(__CLASS__, __FUNCTION__). $e->getMessage()));
+        trigger_error(Get::staticMethod(__CLASS__, __FUNCTION__). $e->getMessage());
       }
     }
     private function minimumLength($data, $min){
@@ -241,8 +241,10 @@
     }
     public static function validateArray($value, $msg){
       if(is_array($value)){
+        echo "eee";
         return true;
       }else{
+        die("xx");
         trigger_error($msg);
       }
     }
