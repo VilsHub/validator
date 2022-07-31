@@ -241,10 +241,8 @@
     }
     public static function validateArray($value, $msg){
       if(is_array($value)){
-        echo "eee";
         return true;
       }else{
-        die("xx");
         trigger_error($msg);
       }
     }
